@@ -1,37 +1,36 @@
-import Head from 'next/head'
-import '../styles/globals.css'
+import styled, { createGlobalStyle } from "styled-components";
+import { ApolloProvider } from "@apollo/client";
 
-export default function MyApp({ Component, pageProps }) {
+import client from "../shared/apollo-client";
+import FavoriteContextProvider from "../shared/contexts/FavoriteContext/FavoriteContext";
+
+const GlobalStyle = createGlobalStyle`
+  @font-face {font-family: "Bank Gothic"; src: url("//db.onlinewebfonts.com/t/f60a44343900843957e92b12b46b71bb.eot"); src: url("//db.onlinewebfonts.com/t/f60a44343900843957e92b12b46b71bb.eot?#iefix") format("embedded-opentype"), url("//db.onlinewebfonts.com/t/f60a44343900843957e92b12b46b71bb.woff2") format("woff2"), url("//db.onlinewebfonts.com/t/f60a44343900843957e92b12b46b71bb.woff") format("woff"), url("//db.onlinewebfonts.com/t/f60a44343900843957e92b12b46b71bb.ttf") format("truetype"), url("//db.onlinewebfonts.com/t/f60a44343900843957e92b12b46b71bb.svg#Bank Gothic") format("svg"); }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+  }
+
+  body {
+    font-family: "Bank Gothic";
+    font-weight: 300;
+  }
+`;
+
+function MyApp({ Component, pageProps }) {
   return (
     <>
-      <Head>
-        <meta charSet="utf-8" />
-        <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
-        <meta
-          name="viewport"
-          content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no"
-        />
-        <meta name="description" content="Description" />
-        <meta name="keywords" content="Keywords" />
-        <title>Next.js PWA Example</title>
-
-        <link rel="manifest" href="/manifest.json" />
-        <link
-          href="/icons/favicon-16x16.png"
-          rel="icon"
-          type="image/png"
-          sizes="16x16"
-        />
-        <link
-          href="/icons/favicon-32x32.png"
-          rel="icon"
-          type="image/png"
-          sizes="32x32"
-        />
-        <link rel="apple-touch-icon" href="/apple-icon.png"></link>
-        <meta name="theme-color" content="#317EFB" />
-      </Head>
-      <Component {...pageProps} />
+      <GlobalStyle />
+      <ApolloProvider client={client}>
+        <FavoriteContextProvider>
+          <Component {...pageProps} />
+        </FavoriteContextProvider>
+      </ApolloProvider>
     </>
-  )
+  );
 }
+
+export default MyApp;

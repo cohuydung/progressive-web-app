@@ -1,59 +1,124 @@
-import styles from '../styles/Home.module.css'
+import Head from "next/head";
+import { useState, useEffect } from "react";
+import { useQuery } from "@apollo/client";
+import styled from "styled-components";
+import { useInView } from "react-intersection-observer";
 
-export default function Home() {
+import Launch from "../shared/components/Launch";
+import Spinner from "../shared/components/Spinner";
+import { LAUCHES_PAST_QUERY } from "../shared/graphql/queries";
+import TopBar from "../shared/components/TopBar";
+
+const Content = styled.div`
+  /* width: 100%; */
+  height: 100%;
+  padding: 50px;
+  min-height: 100vh;
+  /* background: #fafafa; */
+  display: fixed;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  background-image: url("https://wallpaperaccess.com/full/17520.jpg");
+  background-attachment: fixed;
+  /* flex-direction: column; */
+`;
+
+const Wrapper = styled.div`
+  height: 100%;
+  width: 100%;
+`;
+
+let offset = 1;
+
+const launches = () => {
+  const [hasMore, setHasMore] = useState(true);
+
+  const { ref, inView, entry } = useInView({
+    /* Optional options */
+    threshold: 0,
+  });
+
+  const { loading, error, data, fetchMore } = useQuery(LAUCHES_PAST_QUERY, {
+    variables: { limit: 12, offset: 0 },
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchMoreData = async () => {
+      try {
+        await fetchMore({
+          variables: {
+            limit: 3,
+            offset: offset * 12,
+          },
+          updateQuery: (prev, { fetchMoreResult }) => {
+            if (!isMounted) return;
+            setHasMore(!!fetchMoreResult.launchesPast.length);
+            return {
+              ...prev,
+              launchesPast: [
+                ...prev.launchesPast,
+                ...fetchMoreResult.launchesPast,
+              ],
+            };
+          },
+        });
+        offset += 1;
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchMoreData();
+    return () => {
+      isMounted = false;
+    };
+  }, [inView]);
+
+  if (error) {
+    return <Spinner />;
+  }
+  if (loading) {
+    return <Spinner />;
+  }
+
+  const { launchesPast } = data;
+
   return (
-    <div className={styles.container}>
-      <main className={styles.main}>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
+    <>
+      {[...launchesPast].map((rocket) => {
+        const {
+          id,
+          mission_name,
+          links: { mission_patch_small },
+          rocket: { rocket_name },
+        } = rocket;
+        return (
+          <Launch
+            key={id}
+            rocket={rocket}
+            imgSrc={mission_patch_small}
+            rocketName={rocket_name}
+            missonName={mission_name}
+          />
+        );
+      })}
+      {hasMore && <Spinner ref={ref} />}
+    </>
+  );
+};
 
-        <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.js</code>
-        </p>
-
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className={styles.card}
-          >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
-
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel Logo" className={styles.logo} />
-        </a>
-      </footer>
-    </div>
-  )
-}
+const Home = () => {
+  return (
+    <>
+      <Head>
+        <title>Home</title>
+      </Head>
+      <Wrapper>
+        <TopBar />
+        <Content>{launches()}</Content>
+      </Wrapper>
+    </>
+  );
+};
+export default Home;
